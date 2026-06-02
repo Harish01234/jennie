@@ -10,6 +10,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
 import { ThemeProvider } from "@/components/theme-provider"
+import { Navbar } from "@/components/navbar"
 
 
 import type { QueryClient } from '@tanstack/react-query'
@@ -49,7 +50,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider> {children} </ThemeProvider>
+        <ThemeProvider>
+          <Navbar />
+          <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+            {children}
+          </main>
+        </ThemeProvider>
         <TanStackDevtools
           config={{
             position: 'bottom-right',
