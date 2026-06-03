@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Hexagon } from 'lucide-react'
 
 import { ModeToggle } from '@/components/mode-toggle'
+import { NavbarUserMenu } from '@/components/navbar-user-menu'
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -43,6 +44,7 @@ export function Navbar() {
         </NavigationMenu>
 
         <div className="flex shrink-0 items-center gap-2">
+          <NavbarUserMenu />
           <ModeToggle />
         </div>
       </div>
