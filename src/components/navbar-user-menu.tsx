@@ -1,4 +1,5 @@
-import { Link, useRouter } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { LogIn, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -29,29 +30,25 @@ function getUserInitials(name?: string | null, email?: string | null) {
 }
 
 export function NavbarUserMenu() {
-  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const { data: session, isPending } = authClient.useSession()
 
+  useEffect(() => setMounted(true), [])
+
   const handleSignOut = async () => {
-    try {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.navigate({ to: AUTH_LOGIN_PATH })
-          },
-          onError: (ctx) => {
-            toast.error(
-              ctx.error?.message ?? 'Failed to sign out. Please try again.',
-            )
-          },
-        },
-      })
-    } catch {
-      toast.error('Failed to sign out. Please try again.')
+    const { error } = await authClient.signOut()
+
+    if (error) {
+      toast.error(error.message ?? 'Failed to sign out. Please try again.')
+      return
     }
+
+    // Full reload so session cookies + useSession cache are cleared before
+    // beforeLoad runs (avoids redirect loop back to / while still "logged in")
+    window.location.assign(AUTH_LOGIN_PATH)
   }
 
-  if (isPending) {
+  if (!mounted || isPending) {
     return <Skeleton className="size-9 rounded-full" />
   }
 

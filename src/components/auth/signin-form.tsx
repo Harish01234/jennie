@@ -44,37 +44,30 @@ export function SignInForm() {
   const handleSocialLogin = async (provider: SocialProvider) => {
     setIsSubmitting(provider)
 
-    try {
-      await authClient.signIn.social({
-        provider,
-        callbackURL: '/',
-        fetchOptions: {
-          onSuccess: () => {
-            toast.success('Login successful')
-            setIsSubmitting(null)
-          },
-          onError: (ctx) => {
-            toast.error(
-              ctx.error?.message ?? 'Failed to login. Please try again.',
-            )
-            setIsSubmitting(null)
-          },
-        },
-      })
-    } catch {
-      toast.error('Failed to login. Please try again.')
+    // Clear stale session/state so a second login attempt gets fresh OAuth cookies
+    await authClient.signOut()
+
+    const { error } = await authClient.signIn.social({
+      provider,
+      callbackURL: '/',
+      errorCallbackURL: '/signin',
+    })
+
+    if (error) {
+      toast.error(error.message ?? 'Failed to login. Please try again.')
       setIsSubmitting(null)
     }
+    // Success: browser redirects to provider — do not reset state or use onSuccess
   }
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-12">
-      <div className="mb-8 flex size-16 items-center justify-center rounded-2xl bg-lime-400 text-foreground shadow-sm">
+      <div className="mb-8 flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm ring-1 ring-border">
         <Hexagon className="size-9 stroke-[1.5]" />
       </div>
 
-      <h1 className="text-center text-3xl font-bold tracking-tight">
-        Welcome to <span className="text-lime-500">Jennie</span>
+      <h1 className="text-center font-heading text-3xl font-semibold tracking-tight text-foreground">
+        Welcome to <span className="text-primary">Jennie</span>
       </h1>
       <p className="mt-2 text-center text-muted-foreground">
         Sign in to create beautiful presentations

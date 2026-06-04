@@ -13,10 +13,15 @@ export const authMiddleware = createMiddleware({ type: 'request' }).server(
       return next()
     }
 
-    const session = await auth.api.getSession({ headers: getRequestHeaders() })
+    if (isPublicPath(pathname)) {
+      if (pathname === AUTH_LOGIN_PATH) {
+        const session = await auth.api.getSession({ headers: getRequestHeaders() })
+        if (session) throw redirect({ to: '/' })
+      }
+      return next()
+    }
 
-    if (pathname === AUTH_LOGIN_PATH && session) throw redirect({ to: '/' })
-    if (isPublicPath(pathname)) return next()
+    const session = await auth.api.getSession({ headers: getRequestHeaders() })
     if (!session) throw redirect({ to: AUTH_LOGIN_PATH })
 
     return next({ context: { session } })
