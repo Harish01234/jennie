@@ -1,11 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { UserDashboard } from '@/components/auth/user-dashboard'
+import { PresentationGeneratorForm } from '@/features/presentations/components/presentation-generator-form'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
 function HomePage() {
-  return <UserDashboard />
+  return (
+    <div className="bg-page-glow min-h-screen py-16">
+      <PresentationGeneratorForm />
+    </div>
+  )
+  
 }

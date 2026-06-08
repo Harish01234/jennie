@@ -12,12 +12,13 @@ import {
 
 const navLinks = [
   { to: '/', label: 'Home' },
+  { to: '/me', label: 'Me' },
   { to: '/about', label: 'About' },
 ] as const
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="glass sticky top-0 z-50 w-full">
       <div className="mx-auto flex h-16 max-w-6xl min-w-0 items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2 font-semibold">
           <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
