@@ -1,6 +1,6 @@
 export const AUTH_LOGIN_PATH = '/signin'
 
-const PUBLIC_PATHS = ['/signin', '/about']
+const PUBLIC_PATHS = ['/signin', '/about', '/api/inngest']
 
 export function isPublicPath(pathname: string) {
   return (

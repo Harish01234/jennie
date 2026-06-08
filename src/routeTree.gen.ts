@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as AuthSigninRouteImport } from './routes/_auth/signin'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInngestRoute = ApiInngestRouteImport.update({
+  id: '/api/inngest',
+  path: '/api/inngest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSigninRoute = AuthSigninRouteImport.update({
   id: '/_auth/signin',
   path: '/signin',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/me': typeof MeRoute
   '/signin': typeof AuthSigninRoute
+  '/api/inngest': typeof ApiInngestRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/me': typeof MeRoute
   '/signin': typeof AuthSigninRoute
+  '/api/inngest': typeof ApiInngestRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,22 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/me': typeof MeRoute
   '/_auth/signin': typeof AuthSigninRoute
+  '/api/inngest': typeof ApiInngestRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/me' | '/signin' | '/api/auth/$'
+  fullPaths: '/' | '/about' | '/me' | '/signin' | '/api/inngest' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/me' | '/signin' | '/api/auth/$'
-  id: '__root__' | '/' | '/about' | '/me' | '/_auth/signin' | '/api/auth/$'
+  to: '/' | '/about' | '/me' | '/signin' | '/api/inngest' | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/me'
+    | '/_auth/signin'
+    | '/api/inngest'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +92,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   MeRoute: typeof MeRoute
   AuthSigninRoute: typeof AuthSigninRoute
+  ApiInngestRoute: typeof ApiInngestRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -102,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/inngest': {
+      id: '/api/inngest'
+      path: '/api/inngest'
+      fullPath: '/api/inngest'
+      preLoaderRoute: typeof ApiInngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth/signin': {
       id: '/_auth/signin'
       path: '/signin'
@@ -124,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   MeRoute: MeRoute,
   AuthSigninRoute: AuthSigninRoute,
+  ApiInngestRoute: ApiInngestRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
