@@ -3,7 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { prisma } from '#/lib/db'
 import { inngest } from '#/integrations/inngest/client'
 
-import { deriveTitle, requirePresentationUserId } from '../lib/server-helpers'
+import { deriveTitle, requirePresentationUserId } from '#/features/presentations/lib/server-helpers'
 import {
   createPresentationInputSchema,
   presentationIdInputSchema,
@@ -39,6 +39,7 @@ export const createPresentation = createServerFn({ method: 'POST' })
 
 export const updatePresentation = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => updatePresentationInputSchema.parse(data))
+  .middleware([authFnMiddleware])
   .handler(async ({ data }) => {
     const userId = await requirePresentationUserId()
     const { id, ...patch } = data
@@ -55,6 +56,7 @@ export const updatePresentation = createServerFn({ method: 'POST' })
 
 export const deletePresentation = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => presentationIdInputSchema.parse(data))
+  .middleware([authFnMiddleware])
   .handler(async ({ data }) => {
     const userId = await requirePresentationUserId()
     const existing = await prisma.presentation.findFirst({
@@ -67,6 +69,7 @@ export const deletePresentation = createServerFn({ method: 'POST' })
 
 export const regeneratePresentation = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => presentationIdInputSchema.parse(data))
+  .middleware([authFnMiddleware])
   .handler(async ({ data }) => {
     const userId = await requirePresentationUserId()
     const existing = await prisma.presentation.findFirst({
@@ -84,5 +87,5 @@ export const regeneratePresentation = createServerFn({ method: 'POST' })
       data: { presentationId: data.id },
     })
 
-    
+    return { ok: true as const, id: data.id }
   })

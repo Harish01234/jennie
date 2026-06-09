@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LayoutTemplate, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -26,6 +28,10 @@ import {
   PRESENTATION_TEMPLATES,
   type PresentationTemplate,
 } from '@/features/presentations/constant/presentation-templates'
+import { listPresentations } from '../api/presentation-queries'
+import { createPresentation } from '../actions/presentation-mutations'
+import { presentationQueryKeys } from '../hooks/query-keys'
+import { PresentationListSection } from './presentation-list-section'
 
 const MIN_CONTENT_LENGTH = 20
 const MAX_CONTENT_LENGTH = 8000
@@ -50,11 +56,44 @@ const selectTriggerClass =
   'h-11 w-full rounded-xl border-border/60 bg-background/40 shadow-none transition-colors hover:bg-background/60'
 
 export function PresentationGeneratorForm() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
   const [form, setForm] = useState<HomeFormState>(INITIAL_FORM)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   )
-  const [isGenerating, setIsGenerating] = useState(false)
+
+  const { data: presentations = [], isPending: listPending } = useQuery({
+    queryKey: presentationQueryKeys.list(),
+    queryFn: () => listPresentations(),
+  })
+
+  const createMut = useMutation({
+    mutationFn: () =>
+      createPresentation({
+        data: {
+          prompt: form.content.trim(),
+          slideCount: form.slideCount,
+          style: form.style,
+          tone: form.tone,
+          layout: form.layout,
+        },
+      }),
+    onSuccess: (presentation) => {
+      toast.success('Presentation created', {
+        description: 'Generating slides in the background…',
+      })
+      queryClient.invalidateQueries({ queryKey: presentationQueryKeys.list() })
+      navigate({
+        to: '/presentations/$presentationId',
+        params: { presentationId: presentation.id },
+      })
+    },
+    onError: (e) => {
+      toast.error(e instanceof Error ? e.message : 'Could not create presentation')
+    },
+  })
 
   const applyTemplate = (template: PresentationTemplate) => {
     setSelectedTemplateId(template.id)
@@ -68,7 +107,7 @@ export function PresentationGeneratorForm() {
     toast.success(`"${template.label}" template applied`)
   }
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     const trimmed = form.content.trim()
 
     if (trimmed.length < MIN_CONTENT_LENGTH) {
@@ -85,26 +124,13 @@ export function PresentationGeneratorForm() {
       return
     }
 
-    setIsGenerating(true)
-
-    try {
-      // TODO: wire to presentation generation API
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      toast.success('Ready to generate', {
-        description: `${form.slideCount} slides · ${form.style} · ${form.tone}`,
-      })
-    } catch {
-      toast.error('Generation failed', {
-        description: 'Something went wrong. Please try again.',
-      })
-    } finally {
-      setIsGenerating(false)
-    }
+    createMut.mutate()
   }
+
+  const isGenerating = createMut.isPending
 
   return (
     <div className="bg-page-glow mx-auto w-full max-w-4xl space-y-12 pb-16">
-      {/* Hero */}
       <header className="space-y-3 text-center">
         <h1 className="font-heading text-4xl font-semibold tracking-tight text-foreground md:text-5xl md:leading-tight">
           What do you want to{' '}
@@ -115,13 +141,16 @@ export function PresentationGeneratorForm() {
         </p>
       </header>
 
-      {/* Main generator card */}
+      <PresentationListSection
+        presentations={presentations}
+        isPending={listPending}
+      />
+
       <section
         className="glass rounded-3xl p-6 md:p-8"
         aria-label="Presentation generator"
       >
         <div className="space-y-6">
-          {/* Content input */}
           <div className="space-y-2">
             <Textarea
               id="presentation-content"
@@ -153,7 +182,6 @@ export function PresentationGeneratorForm() {
             </div>
           </div>
 
-          {/* Options row */}
           <div className="grid grid-cols-1 gap-5 border-t border-border/50 pt-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-3">
               <Label
@@ -254,13 +282,15 @@ export function PresentationGeneratorForm() {
             </div>
           </div>
 
-          {/* Generate CTA */}
           <div className="flex justify-end border-t border-border/50 pt-6">
             <Button
               type="button"
               size="lg"
-              disabled={isGenerating || form.content.trim().length === 0}
-              onClick={() => void handleGenerate()}
+              disabled={
+                isGenerating ||
+                form.content.trim().length < MIN_CONTENT_LENGTH
+              }
+              onClick={handleGenerate}
               className="h-12 gap-2 rounded-full px-8 text-base shadow-lg shadow-primary/20"
             >
               <Sparkles className="size-5" />
@@ -270,7 +300,6 @@ export function PresentationGeneratorForm() {
         </div>
       </section>
 
-      {/* Templates */}
       <section className="space-y-5" aria-label="Presentation templates">
         <div className="flex items-center gap-2">
           <LayoutTemplate className="size-5 text-primary" />

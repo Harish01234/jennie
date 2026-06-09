@@ -1,12 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { serve } from 'inngest/edge'
 import { inngest } from "#/integrations/inngest/client";
-import { helloWorld } from '#/integrations/inngest/functions';
+import {
+  generatePresentation,
+  helloWorld,
+} from '#/integrations/inngest/functions'
 
 const handler = serve({
   client: inngest,
-  functions: [helloWorld],
-});
+  functions: [generatePresentation, helloWorld],
+})
 
 export const Route = createFileRoute("/api/inngest")({
   server: {
