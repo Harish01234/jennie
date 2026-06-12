@@ -1,3 +1,4 @@
+import { parseImageAttributionFromNotes } from '#/integrations/wikimedia'
 import pptxgen from 'pptxgenjs'
 
 type Slide = {
@@ -100,6 +101,20 @@ export async function exportToPptx({ title, slides }: ExportOptions) {
       valign: 'top',
       paraSpaceAfter: 12,
     })
+
+    const attribution = parseImageAttributionFromNotes(slideData.notes)
+    if (attribution && slideData.imageUrl) {
+      slide.addText(attribution, {
+        x: 0.3,
+        y: 5.1,
+        w: 9.4,
+        h: 0.35,
+        fontSize: 8,
+        fontFace: 'Arial',
+        color: 'CCCCCC',
+        valign: 'bottom',
+      })
+    }
 
     if (slideData.notes) {
       slide.addNotes(slideData.notes)

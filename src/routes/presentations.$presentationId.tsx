@@ -22,6 +22,15 @@ import {
   AlertDialogTrigger,
 } from '#/components/ui/alert-dialog'
 import { Button } from '#/components/ui/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '#/components/ui/empty'
+import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
   Select,
@@ -30,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { Skeleton } from '#/components/ui/skeleton'
 import { Slider } from '#/components/ui/slider'
 import { Textarea } from '#/components/ui/textarea'
 import {
@@ -39,6 +49,7 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import {
+  AlertTriangle,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
@@ -118,27 +129,47 @@ function PresentationDetailPage() {
 
   if (query.isPending) {
     return (
-      <main className="min-h-screen pt-24 pb-12 px-4">
-        <div className="max-w-6xl mx-auto text-muted-foreground">
-          Loading presentation…
+      <div className="space-y-6 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-8 w-24 rounded-xl" />
+          <Skeleton className="h-5 w-40" />
         </div>
-      </main>
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="flex-1 space-y-4">
+            <Skeleton className="h-20 rounded-2xl" />
+            <Skeleton className="aspect-video w-full rounded-2xl" />
+          </div>
+          <div className="space-y-4 lg:w-80 xl:w-96">
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+          </div>
+        </div>
+      </div>
     )
   }
 
   if (query.isError) {
     const error = query.error
     return (
-      <main className="min-h-screen pt-24 pb-12 px-4">
-        <div className="max-w-6xl mx-auto space-y-4">
-          <p className="text-destructive">
+      <Empty className="min-h-[60vh] border-0">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <AlertTriangle />
+          </EmptyMedia>
+          <EmptyTitle>Couldn&apos;t load presentation</EmptyTitle>
+          <EmptyDescription>
             {error instanceof Error ? error.message : 'Something went wrong'}
-          </p>
-          <Button asChild variant="outline" className="rounded-xl">
-            <Link to="/">Back home</Link>
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button asChild variant="outline" className="rounded-xl gap-1">
+            <Link to="/">
+              <ArrowLeft className="size-4" />
+              Back home
+            </Link>
           </Button>
-        </div>
-      </main>
+        </EmptyContent>
+      </Empty>
     )
   }
 
@@ -147,8 +178,8 @@ function PresentationDetailPage() {
   const activeSlide = slides.at(activeSlideIndex)
 
   return (
-    <main className="min-h-screen pt-24 pb-12 px-4">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6 py-2">
+      <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button
@@ -242,7 +273,7 @@ function PresentationDetailPage() {
                   <Label htmlFor="pres-title" className="text-sm font-medium">
                     Title
                   </Label>
-                  <input
+                  <Input
                     id="pres-title"
                     value={form.title}
                     onChange={(e) =>
@@ -251,7 +282,7 @@ function PresentationDetailPage() {
                         title: e.target.value,
                       }))
                     }
-                    className="flex h-10 w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    className="h-10 rounded-xl border-border/50 bg-background/50"
                   />
                 </div>
 
@@ -462,20 +493,39 @@ function PresentationDetailPage() {
             )}
 
             {slides.length === 0 && !isGenerating && (
-              <div className="glass rounded-2xl p-12 text-center">
-                <p className="text-muted-foreground mb-4">
-                  No slides yet. Click "Regenerate" to create slides from your
-                  prompt.
-                </p>
-                <Button
-                  className="rounded-xl gap-2"
-                  onClick={() => regenerateMut.mutate()}
-                  disabled={regenerateMut.isPending}
-                >
-                  <RefreshCw className="size-4" />
-                  Generate slides
-                </Button>
-              </div>
+              <Empty className="glass rounded-2xl">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    {data.status === 'FAILED' ? (
+                      <AlertTriangle className="text-destructive" />
+                    ) : (
+                      <RefreshCw />
+                    )}
+                  </EmptyMedia>
+                  <EmptyTitle>
+                    {data.status === 'FAILED'
+                      ? 'Generation failed'
+                      : 'No slides yet'}
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    {data.status === 'FAILED'
+                      ? 'Something went wrong while generating your slides. You can try again.'
+                      : 'Generate slides from your prompt to get started.'}
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button
+                    className="rounded-xl gap-2"
+                    onClick={() => regenerateMut.mutate()}
+                    disabled={regenerateMut.isPending}
+                  >
+                    <RefreshCw className="size-4" />
+                    {data.status === 'FAILED'
+                      ? 'Try again'
+                      : 'Generate slides'}
+                  </Button>
+                </EmptyContent>
+              </Empty>
             )}
 
             {slides.length === 0 && isGenerating && (
@@ -518,6 +568,6 @@ function PresentationDetailPage() {
           onClose={() => setShowSlideshow(false)}
         />
       )}
-    </main>
+    </div>
   )
 }

@@ -8,9 +8,8 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   return (
-    <div className="bg-page-glow min-h-screen py-16">
+    <div className="py-8 md:py-12">
       <PresentationGeneratorForm />
     </div>
   )
-  
 }

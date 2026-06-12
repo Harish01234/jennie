@@ -2,23 +2,37 @@ import { Output, generateText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { z } from 'zod'
 
+import {
+  formatImageAttributionNote,
+  getFreePptImageWithoutKey,
+} from '#/integrations/wikimedia'
 import { prisma } from '#/lib/db'
 
 import { inngest } from './client'
 
-// ---------------------------------------------------------------------------
-// Image Generation
-// ---------------------------------------------------------------------------
+const IMAGE_FETCH_CONCURRENCY = 3
 
-function buildImageKitUrl(prompt: string, filename: string): string {
-  const baseUrl = process.env.IMAGEKIT_BASE_URL!
-  const sanitizedPrompt = prompt
-    .replace(/[^\w\s-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 100)
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let nextIndex = 0
 
-  return `${baseUrl}/ik-genimg-prompt-${encodeURIComponent(sanitizedPrompt)}/${filename}.jpg?tr=w-1280,h-720`
+  async function worker() {
+    while (nextIndex < items.length) {
+      const current = nextIndex++
+      results[current] = await fn(items[current], current)
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker(),
+  )
+  await Promise.all(workers)
+  return results
 }
 
 // ---------------------------------------------------------------------------
@@ -32,7 +46,7 @@ const slideSchema = z.object({
   imagePrompt: z
     .string()
     .describe(
-      'A concise prompt to generate an illustration for this slide (professional, clean style, no text in image)',
+      'A concise Wikimedia Commons search query for a relevant photo (concrete nouns, professional context, e.g. "office safety training workplace")',
     ),
 })
 
@@ -77,7 +91,7 @@ Guidelines:
 - First slide should be a title slide
 - Last slide should be a summary or call-to-action
 - Keep content concise and impactful
-- For imagePrompt, describe a professional illustration that complements the slide (no text in images)
+- For imagePrompt, write a short Wikimedia Commons photo search phrase with concrete nouns that match the slide topic
 `
 
       const result = await generateText({
@@ -97,15 +111,27 @@ Guidelines:
     })
 
     await step.run('create-slides', async () => {
-      const data = slides.map((s, i) => ({
-        presentationId,
-        order: i,
-        title: s.title,
-        content: s.content,
-        notes: s.notes ?? null,
-        imagePrompt: s.imagePrompt,
-        imageUrl: buildImageKitUrl(s.imagePrompt, `slide-${presentationId}-${i}`),
-      }))
+      const data = await mapWithConcurrency(
+        slides,
+        IMAGE_FETCH_CONCURRENCY,
+        async (s, i) => {
+          const image = await getFreePptImageWithoutKey(s.imagePrompt)
+          const attributionNote = image
+            ? formatImageAttributionNote(image)
+            : null
+          const notes = [s.notes, attributionNote].filter(Boolean).join('\n\n')
+
+          return {
+            presentationId,
+            order: i,
+            title: s.title,
+            content: s.content,
+            notes: notes || null,
+            imagePrompt: s.imagePrompt,
+            imageUrl: image?.imageUrl ?? null,
+          }
+        },
+      )
 
       await prisma.slide.createMany({ data })
     })
